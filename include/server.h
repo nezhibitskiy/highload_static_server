@@ -7,7 +7,7 @@
 
 class Server {
 public:
-    Server();
+    explicit Server(int cpuCount);
     ~Server();
 
     void Run();

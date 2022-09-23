@@ -5,6 +5,6 @@
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
-    Server serv;
+    Server serv(3);
     return 0;
 }
