@@ -21,6 +21,6 @@ RUN mkdir build && \
     cmake .. && \
     make
 
-ENTRYPOINT ["/etc/build/highload_static_server"]
+ENTRYPOINT ["/etc/build/highload2dz"]
 
 EXPOSE 80
