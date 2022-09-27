@@ -28,10 +28,6 @@ find_package_handle_standard_args(
     LIBEVENT_INCLUDE_DIR
 )
 
-set(CURL_LIBRARY "-lcurl")
-find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
-
 include_directories(include)
 
 add_executable(highload2dz main.cpp
