@@ -14,6 +14,7 @@ http::Response StaticHandler::handle(const http::Request &request) const {
     if (path.find("../") != std::string::npos) {
         return http::Response(http::status::Forbidden);
     }
+    std::cout << "Request path: " << request.path() << std::endl;
 
     std::filesystem::path filepath = _rootDir;
     filepath.append(path.substr(1));
