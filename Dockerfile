@@ -6,7 +6,7 @@ RUN apt-get update && \
     g++ \
     cmake \
     libevent-dev \
-    zlib
+    zlib1g-dev
 
 COPY httpd.conf /etc/httpd.conf
 
