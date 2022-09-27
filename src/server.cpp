@@ -19,7 +19,7 @@
 #include <http/request.h>
 #include <staticHander.h>
 
-static const unsigned short PORT = 9995;
+static const unsigned short PORT = 80;
 StaticHandler* handler;
 
 Server::Server(int cpuCount, std::string rootDir, std::string defaultFile) {
