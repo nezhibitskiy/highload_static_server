@@ -3,7 +3,6 @@
 //
 
 #include <iostream>
-#include <utility>
 #include <server.h>
 #include <zconf.h>
 
@@ -20,10 +19,7 @@
 #include <http/request.h>
 #include <staticHander.h>
 
-#include "Responses.h"
-
 static const unsigned short PORT = 9995;
-unsigned short forkNum = 0;
 StaticHandler* handler;
 
 Server::Server(int cpuCount, std::string rootDir, std::string defaultFile) {
@@ -79,7 +75,6 @@ void Server::AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,
 void Server::WriteEndCallback(struct bufferevent *bev, void *user_data) {
     struct evbuffer *output = bufferevent_get_output(bev);
     if (evbuffer_get_length(output) == 0) {
-        std::cout << "Closed. Fork num: " << forkNum << std::endl;
         bufferevent_free(bev);
     }
 }
@@ -113,7 +108,6 @@ void Server::Run() {
     for (int i = 1; i < _cpuCount; i++) {
         pid_t pid = fork();
         if (pid == 0) {
-            forkNum = i;
             break;
         } else if (pid < 0) {
             std::cerr << "Error during fork" << std::endl;

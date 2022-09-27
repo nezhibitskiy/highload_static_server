@@ -44,10 +44,6 @@ http::Response::Response(std::string body, size_t size, const std::string &conte
 }
 
 http::Response::~Response() {
-//    if (body != nullptr) {
-//        delete [](body);
-//        body = nullptr;
-//    }
 }
 
 void http::Response::headersToStream(std::stringstream & ss) const {
