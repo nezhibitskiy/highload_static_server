@@ -9,12 +9,13 @@ http::Response StaticHandler::handle(const http::Request &request) const {
     if (request.method() != http::method::HEAD && request.method() != http::method::GET) {
         return http::Response(http::status::MethodNotAllowed);
     }
+    std::cout << "Request path: " << request.path() << std::endl;
 
     std::string path = request.path();
     if (path.find("../") != std::string::npos) {
+        std::cout << "Forbidden error. Found '../'. Request path: " << request.path() << std::endl;
         return http::Response(http::status::Forbidden);
     }
-    std::cout << "Request path: " << request.path() << std::endl;
 
     std::filesystem::path filepath = _rootDir;
     filepath.append(path.substr(1));
@@ -28,10 +29,12 @@ http::Response StaticHandler::handle(const http::Request &request) const {
     }
 
     if (!std::filesystem::exists(filepath)) {
+        std::cout << "Forbidden error. Doesn't exists. Request path: " << request.path() << std::endl;
         return http::Response(http::status::Forbidden);
     }
 
     if (std::filesystem::is_directory(filepath)) {
+        std::cout << "Forbidden error. Is not dir. Request path: " << request.path() << std::endl;
         return http::Response(http::status::Forbidden);
     }
 
