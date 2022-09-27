@@ -21,12 +21,6 @@ http::Response::Response(const int &status) : statusCode(status) {
     setHeader("Connection", "close");
 }
 
-http::Response::~Response() {
-    if (_fileDescriptor > 0) {
-        close(_fileDescriptor);
-    }
-}
-
 void http::Response::startLineToStream(std::stringstream & ss) const {
     ss << HTTP_VERSION << " " << statusCode << " " << statusToStr() << "\r\n";
 }
@@ -45,9 +39,15 @@ http::Response::Response(std::string body, size_t size, const std::string &conte
     setHeader("Content-Type", contentType);
     setHeader("Server", "nezhibitskiy");
     this->body = body;
-    _contentLength = size;
     setHeader("Content-Length", std::to_string(size));
     setHeader("Connection", "close");
+}
+
+http::Response::~Response() {
+//    if (body != nullptr) {
+//        delete [](body);
+//        body = nullptr;
+//    }
 }
 
 void http::Response::headersToStream(std::stringstream & ss) const {
@@ -85,17 +85,4 @@ std::string http::Response::statusToStr() const {
         case (502): return "Bad Gateway";
         default: return "undefined";
     }
-}
-
-http::Response &http::Response::operator=(Response &&other) noexcept {
-    headers = other.headers;
-    body = other.body;
-    statusCode = other.statusCode;
-    return *this;
-}
-
-http::Response::Response(const Response &other) {
-    headers = other.headers;
-    body = other.body;
-    statusCode = other.statusCode;
 }

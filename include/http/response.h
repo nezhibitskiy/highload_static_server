@@ -16,16 +16,10 @@ namespace http {
     class Response {
     public:
         explicit Response(const int &status = status::OK);
-        explicit Response(std::string body, size_t size, const std::string& contentType, int status = status::OK);
-        Response& operator=(Response&& other) noexcept ;
-        Response(const Response& other);
+        Response(std::string body, size_t size, const std::string& contentType, int status = status::OK);
         ~Response();
-
         std::string str() const;
         void setHeader(const std::string &key, const std::string &value);
-        size_t contentLength() const {return _contentLength;}
-
-        int descriptor() const {return _fileDescriptor;}
     private:
         void setDate();
         std::string statusToStr() const;
@@ -34,9 +28,7 @@ namespace http {
 
         std::unordered_multimap<std::string, std::string> headers;
         std::string body;
-        int _fileDescriptor;
         int statusCode;
-        size_t _contentLength;
     };
 }
 

@@ -54,7 +54,8 @@ void Server::readSock(struct bufferevent* bev , void *tmp) {
 
     bufferevent_setcb(bev, NULL, WriteEndCallback, CloseConnCallback, NULL);
 
-    bufferevent_write(bev, response.str().c_str(), strlen(response.str().c_str()));
+    auto resp = response.str();
+    bufferevent_write(bev, resp.c_str(), resp.length());
 
 }
 

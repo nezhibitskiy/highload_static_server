@@ -44,13 +44,21 @@ http::Response StaticHandler::handle(const http::Request &request) const {
         return response;
     }
 
-    std::ifstream file (filepath.string(), std::ios::in);
-    std::stringstream buffer;
-    buffer << file.rdbuf();
+    std::string read;
+    std::fstream file(filepath.string(), std::ios::binary | std::ios::in);
+    if (file.is_open()) {
+        uint8_t a;
+        do {
+            a = file.get();
+            if (file.eof())break;
+            read.push_back(a);
+        } while (true);
+    }
+    file.close();
 
     return http::Response(
-            buffer.str(),
-            contentLength,
+            read,
+            read.length(),
             dataType);
 }
 

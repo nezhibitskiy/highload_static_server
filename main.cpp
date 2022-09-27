@@ -8,7 +8,7 @@ int main(int argc, char **argv)
     std::string defaultFile = "index.html";
     auto handler = StaticHandler(rootDirectory, defaultFile);
 
-    Server server(4, "./static", "index.html");
+    Server server(1, "./static", "index.html");
     server.Run();
 
     return 0;
