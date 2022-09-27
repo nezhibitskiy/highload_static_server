@@ -1,10 +1,11 @@
-FROM alpine:latest AS release
+FROM ubuntu:latest AS release
 
-RUN apk upgrade --update-cache --available && \
-    apk add cmake && apk add g++ && apk add openssl && apk add make && apk add zlib-dev && \
-    rm -rf /var/cache/apk/*
-
-RUN apk update
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends \
+    make \
+    g++ \
+    cmake \
+    libevent-dev
 
 COPY httpd.conf /etc/httpd.conf
 
