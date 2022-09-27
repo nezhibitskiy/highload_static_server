@@ -6,6 +6,8 @@ RUN apt-get update && \
     g++ \
     cmake \
     libevent-dev \
+    curl \
+    libcurl4-openssl-dev \
     zlib1g-dev
 
 COPY httpd.conf /etc/httpd.conf
