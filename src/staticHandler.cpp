@@ -29,13 +29,13 @@ http::Response StaticHandler::handle(const http::Request &request) const {
     }
 
     if (std::filesystem::is_directory(filepath)) {
-        filepath += std::filesystem::path("index.html");
+        std::cout << "Forbidden error. Is not dir. Request path: " << request.path() << std::endl;
+        return http::Response(http::status::Forbidden);
     }
 
     if (!std::filesystem::exists(filepath)) {
-        filepath += std::filesystem::path("index.html");
-//        std::cout << "Forbidden error. Doesn't exists. Request path: " << request.path() << std::endl;
-//        return http::Response(http::status::Forbidden);
+        std::cout << "Forbidden error. Doesn't exists. Request path: " << request.path() << std::endl;
+        return http::Response(http::status::Forbidden);
     }
 
     auto dataType = contentType(filepath.extension());

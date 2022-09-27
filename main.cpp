@@ -12,7 +12,7 @@ int main(int argc, char **argv)
         std::cout << "bad config" <<std::endl;
     }
 
-    Server server(config.cpu, config.doc_root, "wikipedia_russia.html");
+    Server server(config.cpu, config.doc_root, "index.html");
     server.Run();
     return 0;
 }
