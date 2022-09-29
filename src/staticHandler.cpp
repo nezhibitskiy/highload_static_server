@@ -54,7 +54,7 @@ http::Response StaticHandler::handle(const http::Request &request) const {
         uint8_t a;
         do {
             a = file.get();
-            if (file.eof())break;
+            if (file.eof()) break;
             read.push_back(a);
         } while (true);
     }

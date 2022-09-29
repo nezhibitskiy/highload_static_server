@@ -7,9 +7,12 @@
 
 #include <evutil.h>
 #include "staticHander.h"
+#include <event2/listener.h>
+
 class Server {
 public:
     explicit Server(int cpuCount, std::string rootDir, std::string defaultFile);
+    ~Server();
     void Run();
 private:
     static void AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,

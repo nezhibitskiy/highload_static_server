@@ -13,7 +13,6 @@
 
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
-#include <event2/listener.h>
 #include <event2/util.h>
 #include <event2/event.h>
 #include <http/request.h>
@@ -25,6 +24,10 @@ StaticHandler* handler;
 Server::Server(int cpuCount, std::string rootDir, std::string defaultFile) {
     _cpuCount = cpuCount;
     handler = new StaticHandler(rootDir, defaultFile);
+}
+
+Server::~Server() {
+    delete handler;
 }
 
 void Server::readSock(struct bufferevent* bev , void *tmp) {
@@ -45,19 +48,13 @@ void Server::readSock(struct bufferevent* bev , void *tmp) {
 
     auto response = handler->handle(req);
 
-    bufferevent_enable(bev, EV_WRITE);
-    bufferevent_disable(bev, EV_READ);
-
-    bufferevent_setcb(bev, NULL, WriteEndCallback, CloseConnCallback, NULL);
-
     auto resp = response.str();
     bufferevent_write(bev, resp.c_str(), resp.length());
-
 }
 
 void Server::AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,
                             struct sockaddr *sa, int socklen, void *user_data) {
-    auto *base = static_cast<event_base *>(user_data);
+    auto* base = static_cast<event_base *>(user_data);
     struct bufferevent *bev;
 
     bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
@@ -66,28 +63,34 @@ void Server::AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,
         event_base_loopbreak(base);
         return;
     }
-    bufferevent_setcb(bev, readSock, NULL, CloseConnCallback, NULL);
 
-
-    bufferevent_enable(bev, EV_READ | EV_WRITE);
+    bufferevent_setcb(bev, readSock, WriteEndCallback, CloseConnCallback, base);
+    bufferevent_enable(bev, EV_READ);
 }
 
 void Server::WriteEndCallback(struct bufferevent *bev, void *user_data) {
     struct evbuffer *output = bufferevent_get_output(bev);
+    std::cout << "Write end callback" << std::endl;
     if (evbuffer_get_length(output) == 0) {
+        std::cout << "Connection closed" << std::endl;
         bufferevent_free(bev);
+        int fd = bufferevent_getfd(bev);
+        shutdown(fd, SHUT_RD);
+
+    } else {
+        std::cout << "Error" << std::endl;
     }
 }
 
 void Server::Run() {
-    struct event_base *base;
+    struct event_base *listenBase;
     struct evconnlistener *listener;
     struct event *signal_event;
 
     struct sockaddr_in sin = {0};
 
-    base = event_base_new();
-    if (!base) {
+    listenBase = event_base_new();
+    if (!listenBase) {
         std::cerr <<  "Could not initialize libevent!" << std::endl;
         return;
     }
@@ -96,12 +99,18 @@ void Server::Run() {
     sin.sin_port = htons(PORT);
 
 
-    listener = evconnlistener_new_bind(base, this->AcceptConnect, (void *)base,
-                                       LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
+    listener = evconnlistener_new_bind(listenBase, this->AcceptConnect, (void *)listenBase,
+                                       LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, 100,
                                        (struct sockaddr*)&sin,
                                        sizeof(sin));
     if (!listener) {
         std::cerr << "Could not create a listener!" << std::endl;
+        return;
+    }
+
+    signal_event = evsignal_new(listenBase, SIGINT, SignalCallback, (void *)listenBase);
+    if (!signal_event || event_add(signal_event, NULL)<0) {
+        std::cerr << "Could not create/add a signal event!" << std::endl;
         return;
     }
 
@@ -115,20 +124,14 @@ void Server::Run() {
         }
     }
 
-    signal_event = evsignal_new(base, SIGINT, SignalCallback, (void *)base);
-    if (!signal_event || event_add(signal_event, NULL)<0) {
-        std::cerr << "Could not create/add a signal event!" << std::endl;
-        return;
-    }
-
     std::cout << "Server inited" << std::endl;
-    event_base_dispatch(base);
+    event_base_dispatch(listenBase);
 
     std::cout << "Server stopped" << std::endl;
 
     evconnlistener_free(listener);
     event_free(signal_event);
-    event_base_free(base);
+    event_base_free(listenBase);
 }
 
 void Server::CloseConnCallback(struct bufferevent *bev, short events, void *user_data) {
@@ -141,11 +144,11 @@ void Server::CloseConnCallback(struct bufferevent *bev, short events, void *user
 }
 
 void Server::SignalCallback(evutil_socket_t sig, short events, void *user_data) {
-    auto *base = static_cast<event_base *>(user_data);
+    auto *callbackBase = static_cast<event_base *>(user_data);
     struct timeval delay = { 2, 0 };
 
     std::cout << "Caught an interrupt signal; exiting cleanly in two seconds." << std::endl;
 
-    event_base_loopexit(base, &delay);
+    event_base_loopexit(callbackBase, &delay);
 }
 

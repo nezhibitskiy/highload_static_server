@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 {
     Config config;
     bool ok;
-    std::tie(config, ok) = Config::read_config("/etc/httpd.conf");
+    std::tie(config, ok) = Config::read_config("./httpd.conf");
     if (!ok) {
         std::cout << "bad config" <<std::endl;
     }
