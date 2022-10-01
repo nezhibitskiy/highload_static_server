@@ -18,7 +18,7 @@
 #include <http/request.h>
 #include <staticHander.h>
 
-static const unsigned short PORT = 80;
+static const unsigned short PORT = 8080;
 StaticHandler* handler;
 
 Server::Server(int cpuCount, std::string rootDir, std::string defaultFile) {
@@ -33,9 +33,9 @@ Server::~Server() {
 void Server::readSock(struct bufferevent* bev , void *tmp) {
     std::string result;
     size_t read = 0;
-    char* buffer = new char[1000];
+    char* buffer = new char[150];
     while (read < 1000) {
-        auto received = bufferevent_read(bev, buffer, 1000);
+        auto received = bufferevent_read(bev, buffer, 150);
         result.append(buffer, received);
         read += received;
         if (result.find("\r\n\r\n") != std::string::npos) {
@@ -57,6 +57,8 @@ void Server::AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,
     auto* base = static_cast<event_base *>(user_data);
     struct bufferevent *bev;
 
+    printf("Received on (PID %d)\n", getpid());
+
     bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
     if (!bev) {
         std::cerr << "Error constructing bufferevent!" << std::endl;
@@ -70,22 +72,28 @@ void Server::AcceptConnect(struct evconnlistener *listener, evutil_socket_t fd,
 
 void Server::WriteEndCallback(struct bufferevent *bev, void *user_data) {
     struct evbuffer *output = bufferevent_get_output(bev);
-    std::cout << "Write end callback" << std::endl;
     if (evbuffer_get_length(output) == 0) {
-        std::cout << "Connection closed" << std::endl;
         bufferevent_free(bev);
-        int fd = bufferevent_getfd(bev);
-        shutdown(fd, SHUT_RD);
-
     } else {
         std::cout << "Error" << std::endl;
     }
 }
 
+
 void Server::Run() {
+
+    for (int i = 1; i < _cpuCount; i++) {
+        pid_t pid = fork();
+        if (pid == 0) {
+            break;
+        } else if (pid < 0) {
+            std::cerr << "Error during fork" << std::endl;
+            return;
+        }
+    }
     struct event_base *listenBase;
-    struct evconnlistener *listener;
     struct event *signal_event;
+    struct evconnlistener *listener;
 
     struct sockaddr_in sin = {0};
 
@@ -99,30 +107,22 @@ void Server::Run() {
     sin.sin_port = htons(PORT);
 
 
-    listener = evconnlistener_new_bind(listenBase, this->AcceptConnect, (void *)listenBase,
-                                       LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, 100,
-                                       (struct sockaddr*)&sin,
-                                       sizeof(sin));
-    if (!listener) {
-        std::cerr << "Could not create a listener!" << std::endl;
-        return;
-    }
-
     signal_event = evsignal_new(listenBase, SIGINT, SignalCallback, (void *)listenBase);
     if (!signal_event || event_add(signal_event, NULL)<0) {
         std::cerr << "Could not create/add a signal event!" << std::endl;
         return;
     }
 
-    for (int i = 1; i < _cpuCount; i++) {
-        pid_t pid = fork();
-        if (pid == 0) {
-            break;
-        } else if (pid < 0) {
-            std::cerr << "Error during fork" << std::endl;
-            return;
-        }
+    listener = evconnlistener_new_bind(listenBase, this->AcceptConnect, (void *)listenBase,
+                                       LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE_PORT, -1,
+                                       (struct sockaddr*)&sin,
+                                       sizeof(sin));
+    if (!listener) {
+        std::cerr << "Could not create a listener!" << std::endl;
+        return;
     }
+    std::cout << event_reinit(listenBase) << std::endl;
+
 
     std::cout << "Server inited" << std::endl;
     event_base_dispatch(listenBase);

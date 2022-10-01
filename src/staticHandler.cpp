@@ -5,11 +5,12 @@
 #include "staticHander.h"
 #include <fstream>
 
+std::map<std::string, std::string> cachedData;
+
 http::Response StaticHandler::handle(const http::Request &request) const {
     if (request.method() != http::method::HEAD && request.method() != http::method::GET) {
         return http::Response(http::status::MethodNotAllowed);
     }
-    std::cout << "Request path: " << request.path() << std::endl;
 
     std::string path = request.path();
     if (path.find("../") != std::string::npos) {
@@ -49,21 +50,26 @@ http::Response StaticHandler::handle(const http::Request &request) const {
     }
 
     std::string read;
-    std::fstream file(filepath.string(), std::ios::binary | std::ios::in);
-    if (file.is_open()) {
-        uint8_t a;
-        do {
-            a = file.get();
-            if (file.eof()) break;
-            read.push_back(a);
-        } while (true);
-    }
-    file.close();
 
-    return http::Response(
-            read,
-            read.length(),
-            dataType);
+    auto search = cachedData.find(filepath.string());
+    if (search != cachedData.end()) {
+        read += cachedData[filepath.string()];
+        return http::Response(
+                read,
+                read.length(),
+                dataType, filepath.string(), contentLength);
+    } else {
+        std::ifstream input( filepath.string(), std::ios::binary);
+        std::vector<unsigned char> buffer(std::istreambuf_iterator<char>(input), {});
+        std::string str(buffer.begin(), buffer.end());
+        cachedData[filepath.string()] = str;
+        read += str;
+        return http::Response(
+                read,
+                read.length(),
+                dataType, filepath.string(), contentLength);
+    }
+
 }
 
 std::string StaticHandler::contentType(const std::string &extension) const {

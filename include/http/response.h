@@ -16,16 +16,19 @@ namespace http {
     class Response {
     public:
         explicit Response(const int &status = status::OK);
-        Response(std::string body, size_t size, const std::string& contentType, int status = status::OK);
+        Response(std::string body, size_t size, const std::string& contentType, std::string filepath, size_t filesize, int status = status::OK);
         ~Response();
         std::string str() const;
+        std::string filepath() const;
+        size_t filesize() const;
         void setHeader(const std::string &key, const std::string &value);
     private:
         void setDate();
         std::string statusToStr() const;
         void startLineToStream(std::stringstream & ss) const;
         void headersToStream(std::stringstream & ss) const;
-
+        std::string fp;
+        size_t fs;
         std::unordered_multimap<std::string, std::string> headers;
         std::string body;
         int statusCode;

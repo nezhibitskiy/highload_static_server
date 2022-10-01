@@ -34,8 +34,10 @@ std::string http::Response::str() const {
     return response.str();
 }
 
-http::Response::Response(std::string body, size_t size, const std::string &contentType, int status) : statusCode(status) {
+http::Response::Response(std::string body, size_t size, const std::string &contentType, std::string filepath, size_t filesize, int status) : statusCode(status) {
     setDate();
+    fp = std::move(filepath);
+    fs = filesize;
     setHeader("Content-Type", contentType);
     setHeader("Server", "nezhibitskiy");
     this->body = body;
@@ -50,6 +52,10 @@ void http::Response::headersToStream(std::stringstream & ss) const {
     for (auto &pair : headers) {
         ss << pair.first << ": " << pair.second << "\r\n";
     }
+}
+
+std::string http::Response::filepath() const {
+    return fp;
 }
 
 void http::Response::setHeader(const std::string &key, const std::string &value) {
@@ -81,4 +87,8 @@ std::string http::Response::statusToStr() const {
         case (502): return "Bad Gateway";
         default: return "undefined";
     }
+}
+
+size_t http::Response::filesize() const {
+    return fs;
 }
